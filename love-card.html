@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Boss & Kaew Romantic Love Card</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@600;700&family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box}
+body{font-family:'Prompt',sans-serif;background:linear-gradient(135deg,#fff0f3,#ffccd5 35%,#ffb3c1 70%,#f4acb7);min-height:100vh;margin:0;overflow-x:hidden}
+.font-cursive{font-family:'Dancing Script',cursive}
+.glass-card{background:rgba(255,255,255,.88);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,.95);box-shadow:0 20px 50px rgba(244,114,182,.25)}
+.glass-player{background:rgba(255,245,248,.92);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border:1px solid rgba(244,172,183,.6)}
+.glass-modal{background:rgba(255,255,255,.95);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px)}
+.card-scene{perspective:1200px}
+.card-inner{position:relative;width:100%;height:100%;transform-style:preserve-3d;-webkit-transform-style:preserve-3d;transition:transform .8s cubic-bezier(.34,1.56,.64,1)}
+.card-inner.is-flipped{transform:rotateY(180deg)!important}
+.card-face{position:absolute;inset:0;width:100%;height:100%;backface-visibility:hidden;-webkit-backface-visibility:hidden}
+.card-back{transform:rotateY(180deg)}
+@keyframes softFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+.animate-soft-float{animation:softFloat 5s ease-in-out infinite}
+@keyframes pulseGlow{0%,100%{box-shadow:0 0 20px rgba(244,114,182,.3),0 10px 40px rgba(255,182,193,.4)}50%{box-shadow:0 0 35px rgba(244,114,182,.6),0 15px 50px rgba(255,105,180,.5)}}
+.animate-glow{animation:pulseGlow 3.5s infinite}
+@keyframes heartBeat{0%,100%{transform:scale(1)}14%{transform:scale(1.15)}28%{transform:scale(1)}42%{transform:scale(1.15)}70%{transform:scale(1)}}
+.animate-heartbeat{animation:heartBeat 2s infinite ease-in-out}
+#particleCanvas{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:0}
+</style>
+</head>
+<body class="min-h-screen flex flex-col justify-between items-center p-4 md:p-8">
+
+<canvas id="particleCanvas"></canvas>
+
+<header class="w-full max-w-4xl flex justify-between items-center z-20 mb-4">
+<div class="flex items-center gap-2 bg-white/60 backdrop-blur-md px-4 py-2 rounded-full border border-white/80 shadow-sm">
+<i class="fa-solid fa-heart text-rose-500 animate-pulse"></i>
+<span class="text-sm font-semibold text-rose-700 font-cursive text-xl">Boss & Kaew's Special Space</span>
+</div>
+<div class="flex gap-2">
+<button id="customizeBtn" title="ปรับแต่งการ์ด" class="p-2.5 bg-white/70 hover:bg-white/90 text-rose-600 rounded-full shadow-md"><i class="fa-solid fa-pen-to-square text-lg"></i></button>
+<button id="toggleMusicBtn" title="เปิด/ปิดเพลง" class="p-2.5 bg-white/70 hover:bg-white/90 text-rose-600 rounded-full shadow-md"><i id="musicIcon" class="fa-solid fa-music text-lg"></i></button>
+</div>
+</header>
+
+<main class="w-full max-w-md my-auto z-10 card-scene animate-soft-float" style="height:580px">
+<div id="cardInner" class="card-inner cursor-pointer">
+
+<section class="card-face glass-card rounded-3xl p-6 md:p-8 flex flex-col justify-between items-center text-center shadow-2xl animate-glow border-2 border-white/80">
+<div class="flex items-center gap-1.5 bg-rose-100/80 px-3.5 py-1 rounded-full border border-rose-200">
+<i class="fa-solid fa-sparkles text-rose-500 text-xs"></i>
+<span id="cardCategory" class="text-xs font-semibold text-rose-600">Boss & Kaew ❤️</span>
+</div>
+
+<div class="relative w-36 h-36 md:w-44 md:h-44 my-2 flex justify-center items-center">
+<div id="heartIconGroup" class="relative flex justify-center items-center">
+<div class="absolute inset-0 rounded-full bg-rose-300/30 blur-xl animate-pulse"></div>
+<i class="fa-solid fa-heart text-7xl md:text-8xl text-rose-500 drop-shadow-lg animate-heartbeat"></i>
+</div>
+<img id="photoFrame" alt="Love Memory" class="hidden absolute inset-0 w-full h-full object-cover rounded-2xl border-4 border-white shadow-md">
+</div>
+
+<div class="space-y-2">
+<h1 id="frontTitle" class="font-cursive text-4xl md:text-5xl text-rose-600 font-bold leading-tight">Boss & Kaew</h1>
+<p id="frontSubtitle" class="text-gray-600 text-sm md:text-base font-light">แด่แก้ว...คนที่ทำให้ทุกวันของบอสมีความหมาย ❤️</p>
+<span class="inline-block text-xs text-rose-400 bg-rose-50 px-3 py-1 rounded-full border border-rose-100"><i class="fa-solid fa-hand-pointer mr-1"></i>คลิกเพื่อพลิกดูข้อความ</span>
+</div>
+
+<div id="playerBox" class="glass-player w-full p-3 rounded-2xl flex items-center gap-3 shadow-sm">
+<button id="playPauseBtn" type="button" class="w-10 h-10 bg-gradient-to-tr from-rose-500 to-pink-400 text-white rounded-full flex items-center justify-center shadow-md">
+<i id="playIcon" class="fa-solid fa-play text-sm ml-0.5"></i>
+</button>
+<div class="text-left flex-1 min-w-0">
+<div class="flex justify-between items-center">
+<p id="songTitle" class="text-xs font-bold text-gray-700 truncate">อีกแล้ว - MEYOU</p>
+<span id="currentTime" class="text-[10px] text-rose-500 font-mono">00:00</span>
+</div>
+<div class="w-full bg-rose-200/60 rounded-full h-1.5 mt-1.5 overflow-hidden"><div id="progressBar" class="bg-rose-500 h-full w-0 rounded-full"></div></div>
+</div>
+<label title="เปลี่ยนเพลง" class="cursor-pointer text-rose-400 hover:text-rose-600 p-1">
+<i class="fa-solid fa-file-audio"></i>
+<input type="file" id="audioUpload" accept="audio/*" class="hidden">
+</label>
+</div>
+</section>
+
+<section class="card-face card-back glass-card rounded-3xl p-6 md:p-8 flex flex-col justify-between items-center text-center shadow-2xl border-2 border-white/80">
+<div>
+<h2 class="font-cursive text-3xl md:text-4xl text-rose-600 font-bold">ข้อความจากใจถึงแก้ว</h2>
+<div class="w-12 h-0.5 bg-rose-300 mx-auto rounded-full"></div>
+</div>
+
+<div class="my-2 px-2 max-h-[180px] overflow-y-auto">
+<p id="backMessage" class="text-gray-700 leading-relaxed text-sm md:text-base font-light italic">"ขอบคุณสำหรับทุกๆ รอยยิ้ม ความเข้าใจ และทุกๆ ช่วงเวลาพิเศษที่เราได้ใช้ร่วมกัน ขอบคุณที่เข้ามาเป็นความสุขของบอสในทุกๆ วันนะครับ ❤️"</p>
+</div>
+
+<div class="w-full bg-white/70 p-3 rounded-2xl border border-rose-100 shadow-sm">
+<p class="text-xs text-rose-500 font-medium flex items-center justify-center gap-1"><i class="fa-solid fa-heart"></i><span>ระยะเวลาที่ บอส & แก้ว คบกันมาแล้ว</span><i class="fa-solid fa-heart"></i></p>
+<p id="daysCount" class="text-2xl font-extrabold text-rose-600 font-mono">273 วัน</p>
+<div class="grid grid-cols-3 gap-1 pt-1 text-center border-t border-rose-100 text-xs text-gray-600">
+<div><span id="hoursCount" class="font-bold text-rose-500 block font-mono">6,552</span><span class="text-[9px]">ชั่วโมง</span></div>
+<div><span id="minutesCount" class="font-bold text-rose-500 block font-mono">393,120</span><span class="text-[9px]">นาที</span></div>
+<div><span id="secondsCount" class="font-bold text-rose-500 block font-mono">23,587,200</span><span class="text-[9px]">วินาที</span></div>
+</div>
+</div>
+
+<div class="w-full space-y-1">
+<button id="confettiBtn" type="button" class="w-full bg-gradient-to-r from-rose-500 to-pink-500 text-white font-medium py-2.5 px-6 rounded-2xl shadow-lg flex items-center justify-center gap-2"><i class="fa-solid fa-gift"></i><span>ฉลองครบรอบ 273 วัน 🎉</span></button>
+<p class="text-[10px] text-gray-400">คลิกที่การ์ดเพื่อพลิกกลับ</p>
+</div>
+</section>
+</div>
+</main>
+
+<footer class="z-10 mt-4 text-center"><p class="text-xs text-rose-800/70">Made with ❤️ for Kaew from Boss</p></footer>
+
+<div id="customizeModal" class="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
+<div class="glass-modal w-full max-w-lg rounded-3xl p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
+<div class="flex justify-between items-center border-b border-rose-100 pb-3">
+<h3 class="font-bold text-lg text-rose-600"><i class="fa-solid fa-sliders mr-2"></i>ปรับแต่งการ์ด</h3>
+<button id="closeModalBtn" type="button" class="text-gray-400"><i class="fa-solid fa-xmark text-xl"></i></button>
+</div>
+<div class="space-y-3 text-sm">
+<label>หัวข้อหน้าการ์ด<input id="inputCategory" value="Boss & Kaew ❤️" class="w-full px-3 py-2 rounded-xl border border-rose-200 bg-white/80"></label>
+<label>ข้อความหลัก<input id="inputTitle" value="Boss & Kaew" class="w-full px-3 py-2 rounded-xl border border-rose-200 bg-white/80"></label>
+<label>คำบรรยาย<input id="inputSubtitle" value="แด่แก้ว...คนที่ทำให้ทุกวันของบอสมีความหมาย ❤️" class="w-full px-3 py-2 rounded-xl border border-rose-200 bg-white/80"></label>
+<label>ข้อความด้านหลัง<textarea id="inputMessage" rows="4" class="w-full px-3 py-2 rounded-xl border border-rose-200 bg-white/80">ขอบคุณสำหรับทุกๆ รอยยิ้ม ความเข้าใจ และทุกๆ ช่วงเวลาพิเศษที่เราได้ใช้ร่วมกัน ขอบคุณที่เข้ามาเป็นความสุขของบอสในทุกๆ วันนะครับ ❤️</textarea></label>
+<label>จำนวนวันที่คบกัน<input id="inputDays" type="number" min="0" value="273" class="w-full px-3 py-2 rounded-xl border border-rose-200 bg-white/80"></label>
+<label>URL รูปภาพ<input id="inputPhotoUrl" placeholder="https://..." class="w-full px-3 py-2 rounded-xl border border-rose-200 bg-white/80"></label>
+</div>
+<button id="saveCustomizeBtn" type="button" class="w-full bg-rose-500 text-white py-2.5 rounded-xl">บันทึกการเปลี่ยนแปลง</button>
+</div>
+</div>
+
+<!-- เพลงเริ่มต้น: ต้องอยู่โฟลเดอร์เดียวกับ HTML -->
+<audio id="customAudio" preload="metadata"></audio>
+
+<script>
+/* ---------- particles ---------- */
+const canvas=document.getElementById('particleCanvas'),ctx=canvas.getContext('2d');
+let particles=[];
+function resizeCanvas(){canvas.width=innerWidth;canvas.height=innerHeight}
+addEventListener('resize',resizeCanvas);resizeCanvas();
+class HeartParticle{
+ constructor(){this.reset()}
+ reset(){this.x=Math.random()*canvas.width;this.y=canvas.height+Math.random()*50;this.size=Math.random()*14+8;this.speed=Math.random()*1.2+.5;this.opacity=Math.random()*.5+.3;this.rot=Math.random()*360;this.rs=(Math.random()-.5)*1.5;this.color=`hsl(${Math.random()*30+340},85%,70%)`}
+ update(){this.y-=this.speed;this.x+=Math.sin(this.y*.01)*.5;this.rot+=this.rs;if(this.y<-30)this.reset()}
+ draw(){ctx.save();ctx.translate(this.x,this.y);ctx.rotate(this.rot*Math.PI/180);ctx.globalAlpha=this.opacity;ctx.fillStyle=this.color;let s=this.size;ctx.beginPath();ctx.moveTo(0,s*.3);ctx.bezierCurveTo(0,0,-s/2,0,-s/2,s*.3);ctx.bezierCurveTo(-s/2,(s+s*.3)/2,0,s,0,s);ctx.bezierCurveTo(0,s,s/2,(s+s*.3)/2,s/2,s*.3);ctx.bezierCurveTo(s/2,0,0,0,0,s*.3);ctx.fill();ctx.restore()}
+}
+for(let i=0;i<Math.min(Math.floor(innerWidth/25),35);i++)particles.push(new HeartParticle());
+(function animate(){ctx.clearRect(0,0,canvas.width,canvas.height);particles.forEach(p=>{p.update();p.draw()});requestAnimationFrame(animate)})();
+
+/* ---------- card flip: explicit class, no Tailwind dependency ---------- */
+const cardInner=document.getElementById('cardInner');
+cardInner.addEventListener('click',e=>{
+ if(e.target.closest('button,input,label')) return;
+ cardInner.classList.toggle('is-flipped');
+});
+
+/* ---------- audio ---------- */
+const audio=document.getElementById('customAudio');
+const playBtn=document.getElementById('playPauseBtn');
+const toggleMusicBtn=document.getElementById('toggleMusicBtn');
+const playIcon=document.getElementById('playIcon');
+const musicIcon=document.getElementById('musicIcon');
+const progress=document.getElementById('progressBar');
+const time=document.getElementById('currentTime');
+const title=document.getElementById('songTitle');
+const upload=document.getElementById('audioUpload');
+
+let objectUrl=null;
+
+function formatTime(s){
+ if(!Number.isFinite(s))return '00:00';
+ return String(Math.floor(s/60)).padStart(2,'0')+':'+String(Math.floor(s%60)).padStart(2,'0');
+}
+function updateAudioUI(){
+ const playing=!audio.paused&&!audio.ended;
+ playIcon.className=playing?'fa-solid fa-pause text-sm':'fa-solid fa-play text-sm ml-0.5';
+ musicIcon.className=playing?'fa-solid fa-volume-high text-lg':'fa-solid fa-music text-lg';
+}
+function startAudio(){
+ const p=audio.play();
+ if(p){
+   p.then(updateAudioUI).catch(err=>{
+     console.error(err);
+     alert('เปิดเพลงไม่ได้: ตรวจสอบว่าไฟล์ "อีกแล้ว - MEYOU.mp3" อยู่โฟลเดอร์เดียวกับไฟล์ HTML หรือเลือกเพลงด้วยปุ่ม 🎵 ทางขวา');
+   });
+ }
+}
+function toggleAudio(e){
+ if(e)e.stopPropagation();
+ if(audio.paused) startAudio(); else audio.pause();
+ updateAudioUI();
+}
+playBtn.addEventListener('click',toggleAudio);
+toggleMusicBtn.addEventListener('click',toggleAudio);
+
+audio.addEventListener('loadedmetadata',()=>time.textContent='00:00');
+audio.addEventListener('timeupdate',()=>{
+ if(audio.duration){
+   progress.style.width=(audio.currentTime/audio.duration*100)+'%';
+   time.textContent=formatTime(audio.currentTime);
+ }
+});
+audio.addEventListener('play',updateAudioUI);
+audio.addEventListener('pause',updateAudioUI);
+audio.addEventListener('ended',()=>{progress.style.width='0%';time.textContent='00:00';updateAudioUI()});
+
+upload.addEventListener('change',e=>{
+ const file=e.target.files[0];
+ if(!file)return;
+ if(!file.type.startsWith('audio/')){alert('กรุณาเลือกไฟล์เสียง');return}
+ if(objectUrl)URL.revokeObjectURL(objectUrl);
+ objectUrl=URL.createObjectURL(file);
+ audio.src=objectUrl;
+ title.textContent=file.name;
+ audio.load();
+ startAudio();
+});
+
+/* ---------- customize ---------- */
+const modal=document.getElementById('customizeModal');
+document.getElementById('customizeBtn').addEventListener('click',e=>{e.stopPropagation();modal.classList.remove('hidden');modal.classList.add('flex')});
+document.getElementById('closeModalBtn').addEventListener('click',()=>{modal.classList.add('hidden');modal.classList.remove('flex')});
+modal.addEventListener('click',e=>{if(e.target===modal){modal.classList.add('hidden');modal.classList.remove('flex')}});
+
+const category=document.getElementById('cardCategory'),frontTitle=document.getElementById('frontTitle'),subtitle=document.getElementById('frontSubtitle'),message=document.getElementById('backMessage');
+const inputCategory=document.getElementById('inputCategory'),inputTitle=document.getElementById('inputTitle'),inputSubtitle=document.getElementById('inputSubtitle'),inputMessage=document.getElementById('inputMessage'),inputDays=document.getElementById('inputDays'),inputPhoto=document.getElementById('inputPhotoUrl');
+const photo=document.getElementById('photoFrame'),heart=document.getElementById('heartIconGroup');
+let days=273;
+function updateDays(){
+ const h=days*24,m=h*60,s=m*60;
+ document.getElementById('daysCount').textContent=days.toLocaleString('th-TH')+' วัน';
+ document.getElementById('hoursCount').textContent=h.toLocaleString('en-US');
+ document.getElementById('minutesCount').textContent=m.toLocaleString('en-US');
+ document.getElementById('secondsCount').textContent=s.toLocaleString('en-US');
+}
+updateDays();
+
+document.getElementById('saveCustomizeBtn').addEventListener('click',()=>{
+ category.textContent=inputCategory.value.trim()||'Boss & Kaew ❤️';
+ frontTitle.textContent=inputTitle.value.trim()||'Boss & Kaew';
+ subtitle.textContent=inputSubtitle.value.trim()||'แด่แก้ว...คนที่ทำให้ทุกวันของบอสมีความหมาย ❤️';
+ message.textContent='"'+(inputMessage.value.trim()||'ขอบคุณสำหรับทุกช่วงเวลาที่มีความหมาย ❤️')+'"';
+ days=Math.max(0,parseInt(inputDays.value,10)||0);updateDays();
+ if(inputPhoto.value.trim()){
+   photo.src=inputPhoto.value.trim();photo.classList.remove('hidden');heart.classList.add('hidden');
+ }else{photo.classList.add('hidden');heart.classList.remove('hidden')}
+ localStorage.setItem('bossKaewCardSettings',JSON.stringify({category:category.textContent,title:frontTitle.textContent,subtitle:subtitle.textContent,message:inputMessage.value,days,photoUrl:inputPhoto.value.trim()}));
+ modal.classList.add('hidden');modal.classList.remove('flex');
+ if(typeof confetti==='function')confetti({particleCount:120,spread:100,origin:{x:.5,y:.6}});
+});
+
+/* ---------- saved settings ---------- */
+try{
+ const s=JSON.parse(localStorage.getItem('bossKaewCardSettings')||'null');
+ if(s){
+   inputCategory.value=s.category??inputCategory.value;category.textContent=inputCategory.value;
+   inputTitle.value=s.title??inputTitle.value;frontTitle.textContent=inputTitle.value;
+   inputSubtitle.value=s.subtitle??inputSubtitle.value;subtitle.textContent=inputSubtitle.value;
+   inputMessage.value=s.message??inputMessage.value;message.textContent='"'+inputMessage.value+'"';
+   inputDays.value=s.days??273;days=Number(inputDays.value)||273;updateDays();
+   if(s.photoUrl){inputPhoto.value=s.photoUrl;photo.src=s.photoUrl;photo.classList.remove('hidden');heart.classList.add('hidden')}
+ }
+}catch(e){console.warn(e)}
+
+/* ---------- celebration ---------- */
+document.getElementById('confettiBtn').addEventListener('click',e=>{
+ e.stopPropagation();
+ if(typeof confetti==='function'){
+   confetti({particleCount:180,spread:120,startVelocity:35,origin:{x:.5,y:.55},colors:['#fb7185','#f472b6','#ec4899','#fda4af','#fff']});
+ }
+});
+
+/* ---------- default music path ---------- */
+audio.src='อีกแล้ว - MEYOU.mp3';
+audio.load();
+updateAudioUI();
+</script>
+</body>
+</html>
